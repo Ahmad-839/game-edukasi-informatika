@@ -4,12 +4,28 @@ import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken }
 import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, updateDoc } from 'firebase/firestore';
 import { QrCode, User, Play, Download, Settings, X, Check, FileText, Pickaxe } from 'lucide-react';
 
-// Menggunakan variabel global dari environment
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'informatika-fase-e-game';
+// 1. Gunakan konfigurasi standar (Ganti nilainya dengan Firebase Project Anda jika ingin hardcode, 
+// atau gunakan import.meta.env untuk Vite / process.env untuk Create React App)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "KODE_API_ANDA",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "DOMAIN_ANDA.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "PROJECT_ID_ANDA",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "BUCKET_ANDA.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "SENDER_ID_ANDA",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "APP_ID_ANDA"
+};
+
+// 2. Gunakan Try-Catch agar jika konfigurasi salah, layar tidak langsung putih
+let app, auth, db;
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch (error) {
+  console.error("Gagal inisialisasi Firebase:", error);
+}
+
+const appId = 'informatika-fase-e-game';
 
 // Map diperbesar untuk pengalaman eksplorasi
 const MAP_WIDTH = 40;
@@ -177,24 +193,24 @@ export default function App() {
     "Yahh ilah, skill issue bang? Coba gali di tempat lain 🏃‍♂️💨"
   ];
 
-  useEffect(() => {
+useEffect(() => {
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        // Hapus pengecekan __initial_auth_token dan langsung gunakan Anonymous Login
+        // karena ini adalah mode game publik untuk siswa
+        await signInAnonymously(auth);
       } catch (error) {
         console.error("Auth error:", error);
       }
     };
-    initAuth();
+    if (auth) initAuth(); // Pastikan auth sudah terinisialisasi
 
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
+    if (auth) {
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+        });
+        return () => unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
